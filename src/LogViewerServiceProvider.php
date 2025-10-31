@@ -39,9 +39,7 @@ class LogViewerServiceProvider extends ServiceProvider
             $schedule = $this->app->make(Schedule::class);
             $frequency = config('log-viewer.schedule', 'mondays');
 
-            if (method_exists($schedule->command('nomilk:logs:prune'), $frequency)) {
-                $schedule->command('nomilk:logs:prune')->{$frequency}()->at('00:00');
-            }
+            $schedule->command('nomilk:logs:prune')->{$frequency}()->at('00:00');
         });
     }
 }

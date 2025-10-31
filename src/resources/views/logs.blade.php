@@ -19,7 +19,10 @@
                 <div class="space-y-1">
                     @forelse($lines as $line)
                         @php
-                            preg_match('/\[(.*?)\]\s+local\.(\w+):\s*(.*)/', $line, $matches);
+                            $env = config('app.env', 'local');
+
+                            preg_match('/\[(.*?)\]\s+' . preg_quote($env, '/') . '\.(\w+):\s*(.*)/', $line, $matches);
+
                             $timestamp = $matches[1] ?? '';
                             $level = $matches[2] ?? 'INFO';
                             $message = $matches[3] ?? '';
