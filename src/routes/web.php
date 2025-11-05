@@ -3,6 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use NoMilk\LogViewer\Controllers\LogViewController;
 
-if (config('log-viewer.enabled', true)) {
+if (config('log-viewer.enabled')) {
     Route::get('/log', LogViewController::class)->name('logs.show');
 }
