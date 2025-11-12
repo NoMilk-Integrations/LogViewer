@@ -3,20 +3,35 @@
 namespace NoMilk\LogViewer\Controllers;
 
 use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use NoMilk\LogViewer\FileResolver;
 
 class LogViewController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(Request $request): View
     {
-        $logPath = storage_path(config('log-viewer.log_path'));
+        $files = FileResolver::getAvailableFiles();
+        $selectedFile = $request->query('file', array_key_first($files));
 
-        if (! file_exists($logPath)) {
-            return view('log-viewer::logs', ['lines' => []]);
+        if (! isset($files[$selectedFile])) {
+            $selectedFile = array_key_first($files) ?? null;
         }
 
-        $lines = array_reverse(file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+        $lines = [];
 
-        return view('log-viewer::logs', ['lines' => $lines]);
+        if ($selectedFile && isset($files[$selectedFile])) {
+            $filePath = FileResolver::resolveFilePath($selectedFile);
+
+            if ($filePath && file_exists($filePath)) {
+                $lines = array_reverse(file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+            }
+        }
+
+        return view('log-viewer::logs', [
+            'lines' => $lines,
+            'files' => $files,
+            'selectedFile' => $selectedFile,
+        ]);
     }
 }

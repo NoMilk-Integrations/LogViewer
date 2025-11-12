@@ -1,50 +1,44 @@
 <?php declare(strict_types=1);
 
+use Illuminate\Support\Facades\File;
+
 describe('PruneLogsCommand', function () {
-    beforeEach(function () {
-        $lines = [
-            '['.now()->subWeeks(5)->format('Y-m-d').' 12:00:00] old log',
-            '['.now()->subWeeks(2)->format('Y-m-d').' 12:00:00] recent log',
-            '['.now()->format('H:i:s').'] malformed line',
-        ];
-
-        File::put($this->logPath, implode("\n", $lines) . "\n");
-    });
-
-    it('exits early when log files does not exist.', function () {
-        File::delete($this->logPath);
+    it('exits early when log files do not exist', function () {
+        foreach ($this->files as $file) {
+            File::delete($file);
+        }
 
         $this->artisan('nomilk:logs:prune')
             ->assertExitCode(0)
-            ->expectsOutputToContain('Log file not found');
+            ->expectsOutputToContain('No log files configured');
     });
 
-    it('keeps logs from within retention period', function () {
+    it('keeps logs from within retention period for all files', function () {
         $this->artisan('nomilk:logs:prune')
             ->assertExitCode(0);
 
-        $content = File::get($this->logPath);
-
-        expect($content)->toContain('recent log');
+        foreach ($this->files as $file) {
+            expect(File::get($file))->toContain('recent log');
+        }
     });
 
-    it('prunes logs older than retention period', function () {
+    it('prunes logs older than retention period for all files', function () {
         $this->artisan('nomilk:logs:prune')
             ->assertExitCode(0);
 
-        $content = File::get($this->logPath);
-
-        expect($content)->not->toContain('old log')
-            ->and($content)->toContain('recent log');
+        foreach ($this->files as $file) {
+            expect(File::get($file))->not->toContain('old log')
+                ->and(File::get($file))->toContain('recent log');
+        }
     });
 
-    it('keeps malformed lines', function () {
+    it('keeps malformed lines in all files', function () {
+        File::append($this->files[0], '['.now()->format('H:i:s').'] malformed line');
+
         $this->artisan('nomilk:logs:prune')
             ->assertExitCode(0);
 
-        $content = File::get($this->logPath);
-
-        expect($content)->toContain('malformed line');
+        expect(File::get($this->files[0]))->toContain('malformed line');
     });
 
     it('handles custom retention period', function () {
@@ -53,17 +47,27 @@ describe('PruneLogsCommand', function () {
         $this->artisan('nomilk:logs:prune')
             ->assertExitCode(0);
 
-        $content = File::get($this->logPath);
-
-        expect($content)->not->toContain('old log')
-            ->and($content)->not->toContain('recent log');
+        foreach ($this->files as $file) {
+            expect(File::get($file))->not->toContain('old log')
+                ->and(File::get($file))->not->toContain('recent log');
+        }
     });
 
-    it('handles empty log file gracefully', function () {
-        File::put($this->logPath, '');
+    it('handles empty log files gracefully', function () {
+        foreach ($this->files as $file) {
+            File::put($file, '');
+        }
 
         $this->artisan('nomilk:logs:prune')
             ->assertExitCode(0)
-            ->expectsOutputToContain('Log pruned successfully.');
+            ->expectsOutputToContain('Successfully pruned');
+    });
+
+    it('outputs status for each log file', function () {
+        $this->artisan('nomilk:logs:prune')
+            ->assertExitCode(0)
+            ->expectsOutputToContain('laravel')
+            ->expectsOutputToContain('application')
+            ->expectsOutputToContain('Successfully pruned 2 log file(s)');
     });
 });

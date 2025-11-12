@@ -1,12 +1,25 @@
 <?php
 
 pest()->beforeEach(function () {
-    $this->logPath = storage_path('logs/test-laravel.log');
+    foreach ($this->files as $key => $file) {
+        $this->files[$key] = storage_path('logs/' . $file . '.log');
+    }
+
+    $lines = [
+        '['.now()->subWeeks(10)->format('Y-m-d').' 12:00:00] old log',
+        '['.now()->subWeeks(2)->format('Y-m-d').' 12:00:00] recent log',
+    ];
+
+    foreach ($this->files as $file) {
+        File::put($file, implode("\n", $lines) . "\n");
+    }
 });
 
 pest()->afterEach(function () {
-    if (File::exists($this->logPath)) {
-        File::delete($this->logPath);
+    foreach ($this->files as $file) {
+        if (File::exists($file)) {
+            File::delete($file);
+        }
     }
 });
 
@@ -22,7 +35,7 @@ pest()->afterEach(function () {
 */
 
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
 /*
