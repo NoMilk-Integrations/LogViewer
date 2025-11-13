@@ -15,26 +15,33 @@
                 <p class="text-gray-600 mt-2">Logfilen bliver automatisk ryddet, så kun de seneste {{ config('log-viewer.retention_weeks') }} ugers data bevares.</p>
             </div>
 
-            @if(count($files) > 1)
-                <div class="mt-4 md:mt-0">
-                    <label for="log-file-select" class="block text-sm font-medium text-gray-700 mb-2">Vælg logfil</label>
-
-                    <select id="log-file-select" class="block w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg shadow-sm">
-                        @foreach($files as $key => $file)
-                            <option value="{{ $key }}" @if($key === $selectedFile) selected @endif>
-                                {{ ucfirst($key) }}
-                            </option>
-                        @endforeach
-                    </select>
+            <div class="mt-4 md:mt-0 flex space-x-4">
+                <div class="flex-col items-center">
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Søg</label>
+                    <input type="text" id="search" placeholder="Søg i loggen.." class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm">
                 </div>
-            @endif
+
+                @if(count($files) > 1)
+                    <div class="flex-col items-center">
+                        <label for="log-file-select" class="block text-sm font-medium text-gray-700 mb-1">Vælg logfil</label>
+
+                        <select id="log-file-select" class="block w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg shadow-sm">
+                            @foreach($files as $key => $file)
+                                <option value="{{ $key }}" @if($key === $selectedFile) selected @endif>
+                                    {{ ucfirst($key) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 
     <div class="flex-1 px-8 pb-8 overflow-hidden flex flex-col">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
             <div class="bg-gray-900 text-gray-100 p-4 font-mono text-sm overflow-y-auto flex-1">
-                <div class="space-y-1">
+                <div id="logContainer" class="space-y-1">
                     @forelse($lines as $line)
                         @php
                             $env = config('app.env', 'local');
@@ -67,7 +74,28 @@
     </div>
 
     <script>
-        document.getElementById('log-file-select')?.addEventListener('change', function(e) {
+        const container = document.getElementById('logContainer');
+        const searchInput = document.getElementById('search');
+        const fileSelector = document.getElementById('log-file-select');
+        const logs = document.querySelectorAll('#logContainer > div');
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+        });
+
+        searchInput?.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+
+            container.querySelectorAll('div').forEach(log => {
+                log.hidden = !log.textContent.toLowerCase().includes(query);
+            });
+        });
+
+        fileSelector?.addEventListener('change', function(e) {
             window.location.href = `{{ route('logs.show') }}?file=${e.target.value}`;
         });
     </script>

@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\File;
 
-describe('PruneLogsCommand', function () {
+describe('prune logs command', function () {
     it('exits early when log files do not exist', function () {
         foreach ($this->files as $file) {
             File::delete($file);

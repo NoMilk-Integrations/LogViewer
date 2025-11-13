@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-describe('Routes', function () {
+describe('routes', function () {
     it('has accessible route when enabled', function () {
         $response = $this->get('/log');
 
